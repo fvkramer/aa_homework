@@ -20,18 +20,6 @@ class Board
 
   # new comment
 
-  def test
-    nil
-  end
-
-  def test2
-    nil
-  end
-
-  def test3
-    until
-  end
-
   def valid_move?(start_pos)
     raise "Invalid starting cup" if start_pos < 0 || start_pos > 12
     raise "Starting cup is empty" if @cups[start_pos].empty?
