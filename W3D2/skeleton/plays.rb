@@ -13,6 +13,7 @@ end
 
 class Play
   attr_accessor :title, :year, :playwright_id
+  attr_reader :id
 
   def self.all
     data = PlayDBConnection.instance.execute("SELECT * FROM plays")
@@ -20,30 +21,34 @@ class Play
   end
 
   def self.find_by_title(title)
-    PlayDBConnection.instance.execute(<<-SQL, title)
+    play = PlayDBConnection.instance.execute(<<-SQL, title)
       SELECT
-        title
+        *
       FROM
         plays
       WHERE
         title = ?
     SQL
+    return nil unless play.length > 0
+
+    Play.new(play.first) # play is stored in an array!
   end
 
   def self.find_by_playwright(name)
-    PlayDBConnection.instance.execute(<<-SQL, name)
+    playwright = Playwright.find_by_name(name)
+    raise "#{name} not found in DB" unless playwright
+
+    plays = PlayDBConnection.instance.execute(<<-SQL, playwright.id)
       SELECT
-        title
+        *
       FROM
         plays
-      JOIN
-        playwrights ON plays.playwright_id = playwrights.id
       WHERE
-        playwrights.name = '?'
+        playwright_id = ?
     SQL
+
+    plays.map { |play| Play.new(play) }
   end
-
-
 
   def initialize(options)
     @id = options['id']
@@ -60,7 +65,7 @@ class Play
       VALUES
         (?, ?, ?)
     SQL
-    self.id = PlayDBConnection.instance.last_insert_row_id
+    @id = PlayDBConnection.instance.last_insert_row_id
   end
 
   def update
@@ -76,18 +81,28 @@ class Play
   end
 end
 
-
 class Playwright
+  attr_accessor :name, :birth_year
+  attr_reader :id
+
   def self.all
     data = PlayDBConnection.instance.execute("SELECT * FROM playwrights")
-    data.map { |datum| Playright.new(datum) }
+    data.map { |datum| Playwright.new(datum) }
   end
 
   def self.find_by_name(name)
-  end
+    person = PlayDBConnection.instance.execute(<<-SQL, name)
+      SELECT
+        *
+      FROM
+        playwrights
+      WHERE
+        name = ?
+    SQL
+    return nil unless person.length > 0 # person is stored in an array!
 
-  attr_accessor :name, :birth_year
-  attr_reader :id
+    Playwright.new(person.first)
+  end
 
   def initialize(options)
     @id = options['id']
@@ -96,16 +111,18 @@ class Playwright
   end
 
   def create
+    raise "#{self} already in database" if self.id
     PlayDBConnection.instance.execute(<<-SQL, self.name, self.birth_year)
       INSERT INTO
-        playwrights(name, birth_year)
+        playwrights (name, birth_year)
       VALUES
-        (?,?)
-      SQL
-      @id = PlayDBConnection.instance.last_insert_row_id
+        (?, ?)
+    SQL
+    self.id = PlayDBConnection.instance.last_insert_row_id
   end
 
   def update
+    raise "#{self} not in database" unless self.id
     PlayDBConnection.instance.execute(<<-SQL, self.name, self.birth_year, self.id)
       UPDATE
         playwrights
@@ -113,11 +130,12 @@ class Playwright
         name = ?, birth_year = ?
       WHERE
         id = ?
-      SQL
+    SQL
   end
 
   def get_plays
-    PlayDBConnection.instance.execute(<<-SQL, self.id)
+    raise "#{self} not in database" unless self.id
+    plays = PlayDBConnection.instance.execute(<<-SQL, self.id)
       SELECT
         *
       FROM
@@ -125,5 +143,7 @@ class Playwright
       WHERE
         playwright_id = ?
     SQL
+    plays.map { |play| Play.new(play) }
   end
+
 end
