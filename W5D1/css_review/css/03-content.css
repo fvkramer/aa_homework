@@ -1,19 +1,27 @@
 /* PHASE 3: Content */
 
 .content {
-
+  background-color: white;
+  color: black;
+  width: 900px;
+  margin: auto;
 }
 
 .content-sidebar {
-
+  float: left;
+  width: 230px;
+  padding: 5px;
 }
 
 .content-main {
-
+  float: right;
+  width: 650px;
+  padding: 5px;
 }
 
 .content h1 {
-
+  font-weight: bold;
+  margin: 0 0 5px 0;
 }
 
 .content p {
