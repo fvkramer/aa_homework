@@ -17,4 +17,4 @@ const Noodles = new Dog();
 
 
 Noodles.chase(Marko)
-Noodles.chase.call(Marko, Noodles)
+Noodles.chase.call(Noodles, Marko)
